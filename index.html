@@ -1,0 +1,73 @@
+<!doctype html>
+<title>google-autocomplete-client</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<form>
+  Region:
+  <input name="gl" minlength="2" maxlength="2" size="3" value="us" required>
+  Query:
+  <input name="q" value="how do i" required>
+  <input type="submit">
+</form>
+
+<div id="result"><ul /></div>
+
+<script type="text/xml" id="autocomplete">
+  <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
+    <xsl:output method="html" />
+    <xsl:template match="text()" />
+    <xsl:template match="suggestion">
+      <li><xsl:value-of select="@data" /></li>
+    </xsl:template>
+  </xsl:stylesheet>
+</script>
+
+<script>
+  let xslt = new XSLTProcessor()
+  let stylesheet = document.querySelector('#autocomplete').innerText
+  xslt.importStylesheet(xml(stylesheet))
+
+  let result = document.querySelector('#result ul')
+
+  document.querySelector('form').onsubmit = evt => {
+      evt.preventDefault()
+      result.innerHTML = '<li>Loading...</li>'
+
+      let form = new FormData(evt.target)
+      let url = `${document.location.origin}/api?${new URLSearchParams(form)}`
+//      console.log(url)
+
+      fetch_xml(url).then( xml => {
+          let fragment = xslt.transformToFragment(xml, document)
+          result.replaceChildren(fragment)
+      }).catch( e => {
+          result.parentElement.innerText = e
+          console.error(e)
+      })
+  }
+
+  function fetch_xml(url) {
+      let fetcherr = r => {
+          if (!r.ok) throw new Error(r.statusText)
+          return r
+      }
+      return fetch(url).then(fetcherr).then( r => r.text()).then( r => xml(r))
+  }
+
+  function xml(s) { return new DOMParser().parseFromString(s, "text/xml") }
+</script>
+
+<style>
+  @media (min-width: 601px) {
+    body {
+      width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+
+  form { display: flex; }
+  input:not([type="submit"]) { margin: 0 5px; }
+  input[name="q"] { flex-grow: 1 };
+</style>
