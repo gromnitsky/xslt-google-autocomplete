@@ -3,6 +3,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
+<style>
+  @media (min-width: 601px) {
+    body {
+      width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+  }
+
+  form { display: flex; }
+  input:not([type="submit"]) { margin: 0 5px; }
+  input[name="q"] { flex-grow: 1; }
+</style>
+
 <form>
   Region:
   <input name="gl" minlength="2" maxlength="2" size="3" value="us" required>
@@ -11,7 +25,7 @@
   <input type="submit">
 </form>
 
-<div id="result"><ul /></div>
+<div id="result"><ul></ul></div>
 
 <script type="text/xml" id="autocomplete">
   <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
@@ -57,17 +71,3 @@
 
   function xml(s) { return new DOMParser().parseFromString(s, "text/xml") }
 </script>
-
-<style>
-  @media (min-width: 601px) {
-    body {
-      width: 600px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-  }
-
-  form { display: flex; }
-  input:not([type="submit"]) { margin: 0 5px; }
-  input[name="q"] { flex-grow: 1 };
-</style>
