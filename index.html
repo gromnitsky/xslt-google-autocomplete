@@ -12,14 +12,17 @@
     }
   }
 
-  form { display: flex; }
-  input:not([type="submit"]) { margin: 0 5px; }
+  form {
+    display: flex;
+    flex-flow: row wrap;
+    gap: 5px;
+  }
   input[name="q"] { flex-grow: 1; }
 </style>
 
 <form>
   Region:
-  <input name="gl" minlength="2" maxlength="2" size="3" value="us" required>
+  <input name="gl" minlength="2" maxlength="2" size="2" value="us" required>
   Query:
   <input name="q" value="how do i" required>
   <input type="submit">
