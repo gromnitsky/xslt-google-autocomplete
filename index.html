@@ -7,8 +7,7 @@
   @media (min-width: 601px) {
     body {
       width: 600px;
-      margin-left: auto;
-      margin-right: auto;
+      margin: 8px auto;
     }
   }
 
@@ -18,10 +17,11 @@
     gap: 5px;
   }
   input[name="q"] { flex-grow: 1; }
+  #result { margin-top: 1em; }
 </style>
 
 <form>
-  Region:
+  Country code:
   <input name="gl" minlength="2" maxlength="2" size="2" value="us" required>
   Query:
   <input name="q" value="how do i" required>
@@ -53,23 +53,17 @@
 
       let form = new FormData(evt.target)
       let url = `${document.location.origin}/api?${new URLSearchParams(form)}`
-//      console.log(url)
 
-      fetch_xml(url).then( xml => {
+      fetch(url).then( r => {
+          if (!r.ok) throw new Error(r.statusText)
+          return r.text()
+      }).then( r => xml(r)).then( xml => {
           let fragment = xslt.transformToFragment(xml, document)
           result.replaceChildren(fragment)
       }).catch( e => {
           result.parentElement.innerText = e
           console.error(e)
       })
-  }
-
-  function fetch_xml(url) {
-      let fetcherr = r => {
-          if (!r.ok) throw new Error(r.statusText)
-          return r
-      }
-      return fetch(url).then(fetcherr).then( r => r.text()).then( r => xml(r))
   }
 
   function xml(s) { return new DOMParser().parseFromString(s, "text/xml") }

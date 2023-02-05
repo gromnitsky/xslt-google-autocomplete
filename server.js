@@ -5,7 +5,6 @@ let path = require('path')
 let server = http.createServer( (req, res) => {
     if (!/^\/api/.test(req.url)) return serve_static(req, res, req.url)
 
-    res.setHeader('Access-Control-Allow-Origin', '*')
     let params = Object.fromEntries(new URLSearchParams(req.url.slice(req.url.indexOf('?'))))
     if ( !(params.gl && params.q)) {
         res.statusCode = 400
@@ -19,10 +18,14 @@ let server = http.createServer( (req, res) => {
     url.searchParams.set('gl', params.gl)
     url.searchParams.set('q', params.q)
 
-    fetch_xml(url).then( r => {
+    fetch(url).then( r => {
+        if (!r.ok) throw new Error(r.statusText)
+        return r.text()
+    }).then( r => {
         res.setHeader('Content-Type', 'text/xml')
         res.end(r)
     }).catch( e => {
+        console.log(e)
         res.statusCode = 500
         res.statusMessage = e.message
         res.end()
@@ -30,14 +33,6 @@ let server = http.createServer( (req, res) => {
 })
 
 if (require.main === module) server.listen(process.env.PORT || 3000)
-
-function fetch_xml(url) {
-    let fetcherr = r => {
-        if (!r.ok) throw new Error(r.statusText)
-        return r
-    }
-    return fetch(url).then(fetcherr).then( r => r.text())
-}
 
 let public_root = fs.realpathSync(process.cwd())
 
@@ -47,6 +42,7 @@ function serve_static(req, res, file) {
     fs.stat(name, (err, stats) => {
         if (err) {
             res.statusCode = 404
+            console.error(err.message)
             res.end()
             return
         }
@@ -54,8 +50,9 @@ function serve_static(req, res, file) {
         res.setHeader('Content-Type', "text/html")
 
         let stream = fs.createReadStream(name)
-        stream.on('error', (err) => {
+        stream.on('error', err => {
             res.statusCode = 500
+            console.error(err.message)
             res.end()
         })
         stream.pipe(res)
