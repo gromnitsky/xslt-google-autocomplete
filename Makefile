@@ -1,5 +1,5 @@
 server: kill
-	node server.js &
+	node "`pwd`/server.js" &
 
 kill:
-	-pkill -f 'node server.js'
+	-pkill -f "node `pwd`/server.js"
