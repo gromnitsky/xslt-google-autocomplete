@@ -3,7 +3,7 @@ let fs = require('fs')
 let path = require('path')
 
 let server = http.createServer( (req, res) => {
-    if (!/^\/api/.test(req.url)) return serve_static(req, res, req.url)
+    if (!/^\/+api/.test(req.url)) return serve_static(req, res, req.url)
 
     let params = Object.fromEntries(new URLSearchParams(req.url.slice(req.url.indexOf('?'))))
     if ( !(params.gl && params.q)) {
