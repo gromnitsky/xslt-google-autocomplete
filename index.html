@@ -12,17 +12,18 @@
   }
 
   form {
-    display: flex;
-    flex-flow: row wrap;
+    display: grid;
+    grid-template-columns: auto 1fr;
     gap: 5px;
   }
-  input[name="q"] { flex-grow: 1; }
+  input[type="submit"] { grid-column: 2; }
+
   #result { margin-top: 1em; }
 </style>
 
 <form>
   Country code:
-  <input name="gl" minlength="2" maxlength="2" size="2" value="us" required>
+  <input name="gl" minlength="2" maxlength="2" value="us" required>
   Query:
   <input name="q" value="how do i" required>
   <input type="submit">
