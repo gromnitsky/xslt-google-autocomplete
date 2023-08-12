@@ -1,60 +1,70 @@
-let http = require('http')
-let fs = require('fs')
-let path = require('path')
+import http from 'http'
+import path from 'path'
+import fs from 'fs/promises'
 
 let server = http.createServer( (req, res) => {
-    if (!/^\/+api/.test(req.url)) return serve_static(req, res, req.url)
-
-    let params = Object.fromEntries(new URLSearchParams(req.url.slice(req.url.indexOf('?'))))
-    if ( !(params.gl && params.q)) {
-        res.statusCode = 400
-        res.statusMessage = 'usage: api?gl=CC&q=query'
-        res.end()
-        return
+    let url; try {
+        url = new URL(req.url, `http://${req.headers.host}`)
+    } catch {
+        return usage(res)
     }
 
-    let url = new URL('https://google.com/complete/search')
-    url.searchParams.set('output', 'toolbar')
-    url.searchParams.set('gl', params.gl)
-    url.searchParams.set('q', params.q)
+    if (req.method === 'GET' && url.pathname === '/api') {
+        let gl = url.searchParams.get('gl')
+        let q = url.searchParams.get('q')
+        if ( !(gl && q)) return usage(res)
 
-    fetch(url).then( r => {
-        if (!r.ok) throw new Error(r.statusText)
-        return r.text()
-    }).then( r => {
-        res.setHeader('Content-Type', 'text/xml')
-        res.end(r)
-    }).catch( e => {
-        console.log(e)
-        res.statusCode = 500
-        res.statusMessage = e.message
-        res.end()
-    })
+        let google = new URL('https://google.com/complete/search')
+        google.searchParams.set('output', 'toolbar')
+        google.searchParams.set('gl', gl)
+        google.searchParams.set('q', q)
+
+        fetch(google).then( r => {
+            if (!r.ok) throw new Error(r.statusText)
+            return r.text()
+        }).then( r => {
+            res.setHeader('Content-Type', 'text/xml')
+            res.setHeader("Expires", new Date(Date.now() + 600*1000).toUTCString())
+            res.end(r)
+        }).catch( e => {
+            err(res, e.message, 500)
+        })
+
+    } else
+        serve_static(res, url.pathname)
 })
 
-if (require.main === module) server.listen(process.env.PORT || 3000)
+server.listen(process.env.PORT || 3000)
 
-let public_root = fs.realpathSync(process.cwd())
+let public_root = path.dirname(await fs.realpath(process.argv[1]))
 
-function serve_static(req, res, file) {
+function serve_static(res, file) {
     if (/^\/+$/.test(file)) file = "index.html"
     let name = path.join(public_root, path.normalize(file))
-    fs.stat(name, (err, stats) => {
-        if (err) {
-            res.statusCode = 404
-            console.error(err.message)
-            res.end()
-            return
-        }
+    let fd
+    fs.open(name).then( file_handle => {
+        fd = file_handle
+        return file_handle.stat()
+    }).then( stats => {
+        if (!stats.isFile()) throw new Error(":(")
         res.setHeader('Content-Length', stats.size)
-        res.setHeader('Content-Type', "text/html")
+        res.setHeader('Content-Type', {
+            '.html': 'text/html',
+            '.js': 'application/javascript'
+        }[path.extname(name)] || 'application/octet-stream')
 
-        let stream = fs.createReadStream(name)
-        stream.on('error', err => {
-            res.statusCode = 500
-            console.error(err.message)
-            res.end()
-        })
-        stream.pipe(res)
+        return fd.createReadStream()
+    }).then( stream => stream.pipe(res)).catch( err => {
+        res.statusCode = 404
+        console.error(err.message)
+        res.end()
     })
+}
+
+function usage(res) { err(res, 'usage: /api?gl=CC&q=query') }
+
+function err(res, msg, code = 400) {
+    res.statusCode = code
+    res.statusMessage = msg
+    res.end()
 }

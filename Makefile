@@ -1,5 +1,3 @@
-server: kill
-	node "`pwd`/server.js" &
-
-kill:
-	-pkill -f "node `pwd`/server.js"
+cmd := node `pwd`/server.js
+server: kill; $(cmd) &
+kill:; -pkill -f "$(cmd)"

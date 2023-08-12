@@ -53,9 +53,8 @@
       result.innerHTML = '<li>Loading...</li>'
 
       let form = new FormData(evt.target)
-      let url = `${document.location.origin}${document.location.pathname}/api?${new URLSearchParams(form)}`
 
-      fetch(url).then( r => {
+      fetch(`api?${new URLSearchParams(form)}`).then( r => {
           if (!r.ok) throw new Error(r.statusText)
           return r.text()
       }).then( r => xml(r)).then( xml => {
